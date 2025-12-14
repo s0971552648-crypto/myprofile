@@ -1,63 +1,24 @@
-from django.core import signals
-from django.db.utils import (
-    DEFAULT_DB_ALIAS,
-    DJANGO_VERSION_PICKLE_KEY,
-    ConnectionHandler,
-    ConnectionRouter,
-    DatabaseError,
-    DataError,
-    Error,
-    IntegrityError,
-    InterfaceError,
-    InternalError,
-    NotSupportedError,
-    OperationalError,
-    ProgrammingError,
-)
-from django.utils.connection import ConnectionProxy
+from django.utils.version import get_version
 
-__all__ = [
-    "close_old_connections",
-    "connection",
-    "connections",
-    "reset_queries",
-    "router",
-    "DatabaseError",
-    "IntegrityError",
-    "InternalError",
-    "ProgrammingError",
-    "DataError",
-    "NotSupportedError",
-    "Error",
-    "InterfaceError",
-    "OperationalError",
-    "DEFAULT_DB_ALIAS",
-    "DJANGO_VERSION_PICKLE_KEY",
-]
+VERSION = (5, 2, 6, "final", 0)
 
-connections = ConnectionHandler()
-
-router = ConnectionRouter()
-
-# For backwards compatibility. Prefer connections['default'] instead.
-connection = ConnectionProxy(connections, DEFAULT_DB_ALIAS)
+__version__ = get_version(VERSION)
 
 
-# Register an event to reset saved queries when a Django request is started.
-def reset_queries(**kwargs):
-    for conn in connections.all(initialized_only=True):
-        conn.queries_log.clear()
+def setup(set_prefix=True):
+    """
+    Configure the settings (this happens as a side effect of accessing the
+    first setting), configure logging and populate the app registry.
+    Set the thread-local urlresolvers script prefix if `set_prefix` is True.
+    """
+    from django.apps import apps
+    from django.conf import settings
+    from django.urls import set_script_prefix
+    from django.utils.log import configure_logging
 
-
-signals.request_started.connect(reset_queries)
-
-
-# Register an event to reset transaction state and close connections past
-# their lifetime.
-def close_old_connections(**kwargs):
-    for conn in connections.all(initialized_only=True):
-        conn.close_if_unusable_or_obsolete()
-
-
-signals.request_started.connect(close_old_connections)
-signals.request_finished.connect(close_old_connections)
+    configure_logging(settings.LOGGING_CONFIG, settings.LOGGING)
+    if set_prefix:
+        set_script_prefix(
+            "/" if settings.FORCE_SCRIPT_NAME is None else settings.FORCE_SCRIPT_NAME
+        )
+    apps.populate(settings.INSTALLED_APPS)
