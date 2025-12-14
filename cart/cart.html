@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}購物車{% endblock %}
+
+{% block content %}
+<div class="cart-container">
+  <h2>🛒 我的購物車</h2>
+
+  {% if items %}
+  <table class="cart-table">
+    <thead>
+      <tr>
+        <th>商品圖片</th>
+        <th>名稱</th>
+        <th>數量</th>
+        <th>單價</th>
+        <th>小計</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><img src="{% static item.image %}" alt="{{ item.name }}" class="cart-img"></td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.qty }}</td>
+        <td>NT$ {{ item.price }}</td>
+        <td>NT$ {{ item.subtotal }}</td>
+        <td>
+          <form method="post" action="{% url 'cart:remove_from_cart' item.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger">移除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3 class="cart-total">總金額：NT$ {{ total }}</h3>
+  <form method="post" action="{% url 'cart:clear_cart' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">🧹 清空購物車</button>
+  </form>
+  {% else %}
+  <p>購物車內沒有商品。</p>
+  {% endif %}
+</div>
+{% endblock %}

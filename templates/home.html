@@ -1,0 +1,192 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% block title %}首頁 (Home){% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --bg1:#f6f7fb;
+    --card:rgba(255,255,255,0.75);
+    --border:#e5e7eb;
+    --shadow:0 10px 25px rgba(0,0,0,.08);
+    --brand:#3b82f6;
+    --brand-dark:#2563eb;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent1:#a78bfa;
+    --accent2:#22d3ee;
+  }
+  *{box-sizing:border-box}
+  .home-wrap{padding:20px; max-width:1200px; margin:0 auto;}
+
+  /* Hero 橫幅 */
+  .hero{
+    position:relative;
+    border-radius:20px;
+    padding:28px 24px;
+    background: radial-gradient(1200px 400px at 10% 0%, #eef2ff 0%, #f0f9ff 35%, #f6f7fb 100%);
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:-40px -60px auto auto;
+    width:420px; height:420px; border-radius:50%;
+    background:linear-gradient(135deg, rgba(34,211,238,.18), rgba(59,130,246,.12), rgba(167,139,250,.18));
+    filter: blur(30px);
+    transform:rotate(12deg);
+  }
+  .badge{
+    display:inline-block; padding:6px 12px; border-radius:999px;
+    background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25);
+    font-size:12px; letter-spacing:.08em; color:#1f2937; margin-bottom:10px; position:relative;
+  }
+  .hero h1{
+    font-size:32px; line-height:1.15; margin:6px 0 8px; color:var(--text); position:relative;
+  }
+  .hero p{
+    margin:0 0 14px; color:var(--muted); line-height:1.6; font-size:16px; position:relative;
+  }
+  .hero-cta{position:relative}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:none; cursor:pointer;
+    border-radius:12px; background:var(--brand); color:#fff; font-weight:600; box-shadow:0 6px 16px rgba(59,130,246,.25);
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{background:var(--brand-dark); transform:translateY(-1px); box-shadow:0 10px 24px rgba(37,99,235,.28);}
+  .en-line{display:block; font-size:.86em; color:#8b8b8b; margin-top:2px;}
+
+  /* 宣傳條 */
+  .promo{
+    margin:18px 0 6px; display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .pill{
+    background:var(--card); backdrop-filter: blur(8px); border:1px solid var(--border);
+    border-radius:999px; padding:8px 12px; box-shadow:var(--shadow); font-size:14px; color:#374151;
+  }
+
+  /* 主體兩欄：內容 + 黏貼側欄 */
+  .main-grid{display:grid; grid-template-columns: 1fr 320px; gap:24px; margin-top:22px;}
+  .section-title{
+    text-align:left; font-size:22px; font-weight:800; margin:0 0 14px; color:var(--text);
+  }
+
+  /* 產品格子（自適應 4/2/1 欄） */
+  .products{
+    display:grid; gap:18px;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+  }
+  @media (max-width: 1100px){ .products{grid-template-columns: repeat(3, 1fr);} }
+  @media (max-width: 860px){ .main-grid{grid-template-columns:1fr;} }
+  @media (max-width: 720px){ .products{grid-template-columns: repeat(2, 1fr);} }
+  @media (max-width: 460px){ .products{grid-template-columns: 1fr;} }
+
+  .card{
+    position:relative; background:var(--card); backdrop-filter: blur(8px);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+    padding:12px; display:flex; flex-direction:column; gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:0 14px 32px rgba(0,0,0,.12); border-color:#d1d5db;}
+  .img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:12px; background:#f3f4f6;}
+  .noimg{
+    width:100%; aspect-ratio:4/3; border-radius:12px; background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 10px,#eef2f7 10px,#eef2f7 20px);
+    display:flex; align-items:center; justify-content:center; color:#9ca3af; font-weight:600;
+  }
+  .name{margin:0; font-size:16px; font-weight:700; color:#1f2937; text-align:center;}
+  .price-row{display:flex; align-items:baseline; justify-content:center; gap:8px;}
+  .price{font-size:18px; font-weight:800; color:#111827;}
+  .sale-tag{
+    position:absolute; top:10px; left:10px; padding:6px 10px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent1), var(--accent2));
+    color:#0b1020; font-weight:800; font-size:12px; border:1px solid rgba(0,0,0,.06);
+  }
+  .card form{margin-top:4px; display:flex; justify-content:center;}
+  .btn-primary{all:unset; composes: btn;}
+  .btn-primary{display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:var(--brand); color:#fff; border-radius:12px; cursor:pointer;}
+  .btn-primary:hover{background:var(--brand-dark);}
+
+  /* 側欄：廣告卡黏貼 */
+  .aside{position:sticky; top:24px; height:max-content; display:grid; gap:16px;}
+  .ad{
+    background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:12px;
+  }
+  .ad h3{font-size:16px; margin:0 0 8px; color:#111827;}
+  .ad img{width:100%; border-radius:10px; display:block;}
+</style>
+
+<div class="home-wrap">
+
+  <!-- Hero 區 -->
+  <section class="hero">
+    <span class="badge">NEW SEASON</span>
+    <h1>⚡ 工具線材節
+      <span class="en-line">Cable &amp; Wire Festival</span>
+    </h1>
+    <p>
+      全館電線電纜 <strong>全面 8 折</strong> · 限時優惠 · 滿額免運
+      <span class="en-line">All cables 20% off · Limited time · Free shipping over threshold</span>
+    </p>
+    <div class="hero-cta">
+      <a href="{% url 'products:home' %}" class="btn">立即逛逛 <span class="en-line">Shop Now</span></a>
+    </div>
+  </section>
+
+  <!-- 輕量宣傳條 -->
+  <div class="promo" aria-hidden="true">
+    <div class="pill">🎉 心黑賺得多 <span class="en-line">Black Heart, Big Profit</span></div>
+    <div class="pill">🛠️ 工具職人首選 <span class="en-line">Pro-grade Picks</span></div>
+    <div class="pill">🔒 安全與品質 <span class="en-line">Safety &amp; Quality</span></div>
+  </div>
+
+  <!-- 主體：內容 + 側欄 -->
+  <div class="main-grid">
+    <!-- 內容區：產品 -->
+    <div>
+      <h2 class="section-title">✨ 精選商品 <span class="en-line">Featured Products</span></h2>
+
+      <div class="products">
+        {% for product in products %}
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            {% if product.image %}
+              <img src="{% static 'images/products/' %}{{ product.image }}" alt="{{ product.name }}" class="img">
+            {% else %}
+              <div class="noimg">No Image</div>
+            {% endif %}
+
+            <h3 class="name">{{ product.name }}</h3>
+            <div class="price-row">
+              <span class="price">NT$ {{ product.price|floatformat:0 }}</span>
+            </div>
+
+            <form method="post" action="{% url 'cart:add_to_cart' product.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車
+                <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 側欄：廣告（黏貼） -->
+    <aside class="aside">
+      <div class="ad">
+        <h3>🔥 熱門廣告 <span class="en-line">Hot Ads</span></h3>
+        <a href="https://www.google.com" target="_blank" rel="noopener">
+          <img src="{% static 'images/ads/ad1.gif' %}" alt="廣告1">
+        </a>
+      </div>
+
+      <div class="ad">
+        <h3>🎯 推薦商品 <span class="en-line">Recommended</span></h3>
+        <a href="https://www.yahoo.com" target="_blank" rel="noopener">
+          <img src="{% static 'images/ads/ad2.gif' %}" alt="廣告2">
+        </a>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

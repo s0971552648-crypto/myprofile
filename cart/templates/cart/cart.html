@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}購物車{% endblock %}
+
+{% block content %}
+  <h2>🛒 我的購物車</h2>
+
+  {% if items %}
+    <table border="1" cellpadding="8" cellspacing="0">
+      <tr>
+        <th>商品</th>
+        <th>數量</th>
+        <th>單價</th>
+        <th>小計</th>
+        <th>操作</th>
+      </tr>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.product.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>NT$ {{ item.product.price }}</td>
+        <td>NT$ {{ item.get_total_price }}</td>
+        <td>
+          <a href="{% url 'cart:remove_from_cart' item.id %}">❌ 移除</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p><strong>總計：</strong>NT$ {{ total }}</p>
+    <a href="{% url 'cart:clear_cart' %}">🗑 清空購物車</a>
+  {% else %}
+    <p>購物車目前是空的。</p>
+  {% endif %}
+{% endblock %}

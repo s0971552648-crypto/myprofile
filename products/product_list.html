@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}商品列表{% endblock %}
+
+{% block content %}
+  <h2 style="margin:20px 0;">📦 所有商品</h2>
+
+  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
+    {% for product in products %}
+      <div style="border:1px solid #ddd; border-radius:8px; padding:15px; text-align:center; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+        
+        {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+               style="width:100%; height:180px; object-fit:cover; border-radius:6px;">
+        {% else %}
+          <div style="width:100%; height:180px; background:#eee; display:flex; align-items:center; justify-content:center; border-radius:6px;">
+            No Image
+          </div>
+        {% endif %}
+
+        <h3 style="margin:10px 0;">{{ product.name }}</h3>
+        <p style="font-size:16px; font-weight:bold; color:#333;">NT$ {{ product.price }}</p>
+
+        <!-- 方法 A：加入購物車後直接回首頁 -->
+        <form method="post" action="{% url 'cart:add_to_cart' product.id %}">
+          {% csrf_token %}
+          <button type="submit" 
+                  style="padding:10px 16px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;">
+            🛒 加入購物車
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,247 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% block title %}購物車{% endblock %}
+
+{% block content %}
+<style>
+  /* ========================
+     整體與背景
+  ======================== */
+  body {
+    background: linear-gradient(135deg, #0d0d0d, #1e1e1e);
+    color: #f1f1f1;
+    font-family: 'Poppins', 'Microsoft JhengHei', sans-serif;
+    line-height: 1.6;
+  }
+
+  .form-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+  }
+
+  /* ========================
+     標題
+  ======================== */
+  .cart-title {
+    font-size: 42px;
+    color: #ffeb3b;
+    text-align: center;
+    font-weight: 900;
+    text-shadow: 0 0 12px #ffeb3b, 0 0 24px rgba(255, 255, 255, 0.5);
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+  }
+
+  /* ========================
+     購物車表格
+  ======================== */
+  .cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .cart-table th,
+  .cart-table td {
+    padding: 18px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .cart-table th {
+    background: #f2f2f2;
+    color: #000;  /* 🖤 改黑字 */
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cart-table td {
+    background-color: #fff;
+    color: #000;  /* 🖤 商品名稱與價格黑字 */
+    transition: background 0.3s ease;
+  }
+
+  .cart-table tr:hover td {
+    background-color: #f9f9f9;
+  }
+
+  .cart-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .cart-img.no-img {
+    background: #ccc;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-weight: 700;
+  }
+
+  /* ========================
+     按鈕
+  ======================== */
+  .btn-danger {
+    background: #ff3b30;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .btn-danger:hover {
+    background: #d60000;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
+  }
+
+  /* ========================
+     總金額
+  ======================== */
+  .cart-total {
+    font-size: 32px;
+    font-weight: 900;
+    text-align: center;
+    color: #000;  /* 🖤 改黑字 */
+    margin-top: 30px;
+    margin-bottom: 30px;
+  }
+
+  /* ========================
+     清空購物車按鈕
+  ======================== */
+  .clear-cart {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .clear-cart button {
+    background: #ff5722;
+    color: white;
+    border: none;
+    padding: 16px 36px;
+    font-size: 20px;
+    font-weight: 800;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .clear-cart button:hover {
+    background: #e64a19;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+  }
+
+  /* ========================
+     空購物車文字
+  ======================== */
+  p {
+    font-size: 26px;
+    text-align: center;
+    color: #333;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* ========================
+     RWD
+  ======================== */
+  @media (max-width: 768px) {
+    .cart-title {
+      font-size: 30px;
+    }
+
+    .cart-table th,
+    .cart-table td {
+      padding: 12px;
+      font-size: 16px;
+    }
+
+    .cart-img {
+      width: 80px;
+      height: 80px;
+    }
+
+    .clear-cart button {
+      width: 100%;
+      font-size: 18px;
+      padding: 14px;
+    }
+  }
+</style>
+
+<div class="form-container">
+  <h2 class="cart-title">🛒 我的購物車</h2>
+
+  {% if items %}
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>圖片</th>
+          <th>商品名稱</th>
+          <th>數量</th>
+          <th>單價</th>
+          <th>小計</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            {% if item.image %}
+              <img src="{% static 'images/products/' %}{{ item.image }}" alt="{{ item.name }}" class="cart-img">
+            {% else %}
+              <div class="cart-img no-img">No Image</div>
+            {% endif %}
+          </td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.qty }}</td>
+          <td>NT$ {{ item.price }}</td>
+          <td>NT$ {{ item.subtotal }}</td>
+          <td>
+            <form method="post" action="{% url 'cart:remove_from_cart' item.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger">移除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3 class="cart-total">總金額：NT$ {{ total }}</h3>
+
+    <div class="clear-cart">
+      <form method="post" action="{% url 'cart:clear_cart' %}">
+        {% csrf_token %}
+        <button type="submit">清空購物車</button>
+      </form>
+    </div>
+  {% else %}
+    <p>購物車是空的</p>
+  {% endif %}
+</div>
+
+{% endblock %}

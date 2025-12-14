@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}我的商店{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* ====== 全屏抽象背景 ====== */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, #ff00d4, #00bcd4, #ffeb3b, #4caf50, #9c27b0);
+      background-size: 600% 600%;
+      animation: gradient 8s ease infinite;
+      z-index: -1;
+    }
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ====== 畢卡索風格導覽列 ====== */
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 20px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .navbar-link, .navbar-btn {
+      text-decoration: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, color 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .navbar-link:hover, .navbar-btn:hover {
+      transform: translateY(-5px);
+      color: #ffeb3b;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
+    }
+
+    /* ====== 英文副標 ====== */
+    .en-text {
+      display: block;
+      font-size: 16px;
+      color: #ddd;
+      margin-top: 4px;
+      text-shadow: none;
+    }
+
+    /* ====== 使用者名稱 ====== */
+    .navbar-user {
+      font-size: 22px;
+      color: #fbc02d;
+      font-weight: 700;
+      margin-top: 5px;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    /* ====== 整體頁面風格 ====== */
+    body.site-bg {
+      background: #101010;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+    }
+
+    /* ====== 按鈕動畫 ====== */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-radius: 30px;
+      background: #ff00d4;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: #ffeb3b;
+      transform: translateY(-4px);
+    }
+
+    /* ====== 整體結構 ====== */
+    .content-wrap {
+      padding: 40px 20px;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ====== 設定背景動畫 ====== */
+    .hero-background {
+      position: relative;
+      background: url("{% static 'images/hero-background.jpg' %}") no-repeat center center;
+      background-size: cover;
+      height: 300px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-background h2 {
+      font-size: 40px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    }
+
+    /* ====== 動畫效果：反射的光條 ====== */
+    @keyframes flicker {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; transform: rotate(2deg); }
+      100% { opacity: 1; }
+    }
+    .navbar {
+      animation: flicker 4s infinite alternate ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="site-bg">
+
+  <!-- 導覽列 -->
+  <nav class="navbar">
+    <a href="{% url 'products:home' %}" class="navbar-link">
+      🏠 首頁
+      <span class="en-text">Home</span>
+    </a>
+
+    <a href="{% url 'cart:cart_view' %}" class="navbar-link">
+      🛒 購物車
+      <span class="en-text">Cart</span>
+    </a>
+
+    {% if user.is_authenticated %}
+      <span class="navbar-user">👤 {{ user.username }}</span>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="navbar-btn">
+          🚪 登出
+          <span class="en-text">Logout</span>
+        </button>
+      </form>
+    {% else %}
+      <a href="{% url 'accounts:login' %}" class="navbar-link">
+        🔑 登入
+        <span class="en-text">Login</span>
+      </a>
+      <a href="{% url 'accounts:register' %}" class="navbar-link">
+        📝 註冊
+        <span class="en-text">Register</span>
+      </a>
+    {% endif %}
+  </nav>
+
+  <div class="content-wrap">
+    <div class="hero-background">
+      <h2>🔥 全館熱賣！超值優惠中！</h2>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <div>
+      <a href="#" class="btn-primary">
+        🛍️ 立即購物
+        <span class="en-text">Shop Now</span>
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+[
+  {
+    "model": "products.product",
+    "pk": 1,
+    "fields": {
+      "name": "阿薩姆紅茶",
+      "price": 120,
+      "image": "a.jpg"
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 2,
+    "fields": {
+      "name": "錫蘭奶茶",
+      "price": 150,
+      "image": "b.jpg"
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 3,
+    "fields": {
+      "name": "綠茶拿鐵",
+      "price": 180,
+      "image": "c.jpg"
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 4,
+    "fields": {
+      "name": "黑糖珍珠鮮奶",
+      "price": 200,
+      "image": "d.jpg"
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 5,
+    "fields": {
+      "name": "抹茶歐蕾",
+      "price": 160,
+      "image": "e.jpg"
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 6,
+    "fields": {
+      "name": "冰釀咖啡",
+      "price": 140,
+      "image": "f.jpg"
+    }
+  }
+]

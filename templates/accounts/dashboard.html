@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}會員中心{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <h2>👤 會員中心</h2>
+  <p>歡迎回來，<strong>{{ user.username }}</strong>！</p>
+
+  <ul style="font-size:18px; line-height:1.8; font-family:'Microsoft JhengHei';">
+    <li><a href="{% url 'products:home' %}">🏠 回首頁</a></li>
+    <li><a href="{% url 'cart:cart_view' %}">🛒 我的購物車</a></li>
+    <li><a href="#">📦 我的訂單（之後可加）</a></li>
+    <li><a href="{% url 'accounts:logout' %}">🚪 登出</a></li>
+  </ul>
+</div>
+{% endblock %}
