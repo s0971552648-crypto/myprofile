@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<!-- saved from url=(0029)https://django2.tw.cpolar.io/ -->
+<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>莊洧宸 | Wei-Chen Chuang</title>
+  <link rel="stylesheet" href="./shopping-center_files/style.css">
+  <style>
+    /* ====== 全屏抽象背景 ====== */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, #ff00d4, #00bcd4, #ffeb3b, #4caf50, #9c27b0);
+      background-size: 600% 600%;
+      animation: gradient 8s ease infinite;
+      z-index: -1;
+    }
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ====== 畢卡索風格導覽列 ====== */
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 20px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .navbar-link, .navbar-btn {
+      text-decoration: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, color 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .navbar-link:hover, .navbar-btn:hover {
+      transform: translateY(-5px);
+      color: #ffeb3b;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
+    }
+
+    /* ====== 英文副標 ====== */
+    .en-text {
+      display: block;
+      font-size: 16px;
+      color: #000;           /* ✅ 改成黑色字體 */
+      margin-top: 4px;
+      font-weight: 600;      /* ✅ 加粗讓英文更明顯 */
+      text-shadow: none;
+    }
+
+    /* ====== 使用者名稱 ====== */
+    .navbar-user {
+      font-size: 22px;
+      color: #fbc02d;
+      font-weight: 700;
+      margin-top: 5px;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    /* ====== 整體頁面風格 ====== */
+    body.site-bg {
+      background: #101010;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+    }
+
+    /* ====== 按鈕動畫 ====== */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-radius: 30px;
+      background: #ff00d4;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: #ffeb3b;
+      transform: translateY(-4px);
+    }
+
+    /* ====== 整體結構 ====== */
+    .content-wrap {
+      padding: 40px 20px;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ====== 設定背景動畫 ====== */
+    .hero-background {
+      position: relative;
+      background: url("/static/images/hero-background.jpg") no-repeat center center;
+      background-size: cover;
+      height: 300px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-background h2 {
+      font-size: 40px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    }
+
+    /* ====== 動畫效果：反射的光條 ====== */
+    @keyframes flicker {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; transform: rotate(2deg); }
+      100% { opacity: 1; }
+    }
+    .navbar {
+      animation: flicker 4s infinite alternate ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="site-bg">
+
+  <!-- 導覽列 -->
+  <nav class="navbar">
+    <a href="https://django2.tw.cpolar.io/" class="navbar-link">
+      🏠 首頁
+      <span class="en-text">Home</span>
+    </a>
+
+    <a href="https://django2.tw.cpolar.io/cart/" class="navbar-link">
+      🛒 購物車
+      <span class="en-text">Cart</span>
+    </a>
+
+    
+      <a href="https://django2.tw.cpolar.io/accounts/login/" class="navbar-link">
+        🔑 登入
+        <span class="en-text">Login</span>
+      </a>
+      <a href="https://django2.tw.cpolar.io/accounts/register/" class="navbar-link">
+        📝 註冊
+        <span class="en-text">Register</span>
+      </a>
+    
+  </nav>
+
+  <div class="content-wrap">
+    <div class="hero-background">
+      <h2>
+        🔥🔥🔥 全館熱賣！超值優惠中🔥🔥🔥
+        <span class="en-text">Hot Sale All Around! Grab Your Deals Now!</span>
+      </h2>
+    </div>
+
+    
+<style>
+  :root{
+    --bg1:#f6f7fb;
+    --card:rgba(255,255,255,0.75);
+    --border:#e5e7eb;
+    --shadow:0 10px 25px rgba(0,0,0,.08);
+    --brand:#3b82f6;
+    --brand-dark:#2563eb;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent1:#a78bfa;
+    --accent2:#22d3ee;
+  }
+  *{box-sizing:border-box}
+  .home-wrap{padding:20px; max-width:1200px; margin:0 auto;}
+
+  .hero{
+    position:relative;
+    border-radius:20px;
+    padding:28px 24px;
+    background: radial-gradient(1200px 400px at 10% 0%, #eef2ff 0%, #f0f9ff 35%, #f6f7fb 100%);
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:-40px -60px auto auto;
+    width:420px; height:420px; border-radius:50%;
+    background:linear-gradient(135deg, rgba(34,211,238,.18), rgba(59,130,246,.12), rgba(167,139,250,.18));
+    filter: blur(30px);
+    transform:rotate(12deg);
+  }
+  .badge{
+    display:inline-block; padding:6px 12px; border-radius:999px;
+    background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25);
+    font-size:12px; letter-spacing:.08em; color:#1f2937; margin-bottom:10px; position:relative;
+  }
+  .hero h1{
+    font-size:32px; line-height:1.15; margin:6px 0 8px; color:var(--text); position:relative;
+  }
+  .hero p{
+    margin:0 0 14px; color:var(--muted); line-height:1.6; font-size:16px; position:relative;
+  }
+
+  /* 改成黑色的英文翻譯樣式 */
+  .en-line{
+    display:block;
+    font-size:1em;
+    color:#000;
+    font-weight:600;
+    margin-top:4px;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:none; cursor:pointer;
+    border-radius:12px; background:var(--brand); color:#fff; font-weight:600; box-shadow:0 6px 16px rgba(59,130,246,.25);
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{background:var(--brand-dark); transform:translateY(-1px); box-shadow:0 10px 24px rgba(37,99,235,.28);}
+
+  .promo{
+    margin:18px 0 6px; display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .pill{
+    background:var(--card); backdrop-filter: blur(8px); border:1px solid var(--border);
+    border-radius:999px; padding:8px 12px; box-shadow:var(--shadow); font-size:14px; color:#374151;
+  }
+
+  .main-grid{display:grid; grid-template-columns: 1fr 320px; gap:24px; margin-top:22px;}
+  .section-title{
+    text-align:left; font-size:22px; font-weight:800; margin:0 0 14px; color:var(--text);
+  }
+
+  .products{display:grid; gap:18px; grid-template-columns: repeat(4, minmax(0,1fr));}
+  @media (max-width: 1100px){ .products{grid-template-columns: repeat(3, 1fr);} }
+  @media (max-width: 860px){ .main-grid{grid-template-columns:1fr;} }
+  @media (max-width: 720px){ .products{grid-template-columns: repeat(2, 1fr);} }
+  @media (max-width: 460px){ .products{grid-template-columns: 1fr;} }
+
+  .card{
+    position:relative; background:var(--card); backdrop-filter: blur(8px);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+    padding:12px; display:flex; flex-direction:column; gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:0 14px 32px rgba(0,0,0,.12); border-color:#d1d5db;}
+  .img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:12px; background:#f3f4f6;}
+  .noimg{
+    width:100%; aspect-ratio:4/3; border-radius:12px; background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 10px,#eef2f7 10px,#eef2f7 20px);
+    display:flex; align-items:center; justify-content:center; color:#9ca3af; font-weight:600;
+  }
+  .name{margin:0; font-size:16px; font-weight:700; color:#1f2937; text-align:center;}
+  .price-row{display:flex; align-items:baseline; justify-content:center; gap:8px;}
+  .price{font-size:18px; font-weight:800; color:#111827;}
+  .sale-tag{
+    position:absolute; top:10px; left:10px; padding:6px 10px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent1), var(--accent2));
+    color:#0b1020; font-weight:800; font-size:12px; border:1px solid rgba(0,0,0,.06);
+  }
+  .card form{margin-top:4px; display:flex; justify-content:center;}
+  .btn-primary{all:unset; composes: btn;}
+  .btn-primary{display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:var(--brand); color:#fff; border-radius:12px; cursor:pointer;}
+  .btn-primary:hover{background:var(--brand-dark);}
+
+  .aside{position:sticky; top:24px; height:max-content; display:grid; gap:16px;}
+  .ad{
+    background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:12px;
+  }
+  .ad h3{font-size:16px; margin:0 0 8px; color:#111827;}
+  .ad img{width:100%; border-radius:10px; display:block;}
+</style>
+
+<div class="home-wrap">
+
+  <!-- Hero 區 -->
+  <section class="hero">
+    <span class="badge">NEW SEASON</span>
+    <h1>⚡ 工具線材節
+      <span class="en-line">Cable &amp; Wire Festival</span>
+    </h1>
+
+    <p>
+      🔥全館熱賣！超值優惠中🔥
+      <span class="en-line">Hot Sale All Around! Grab Your Deals Now!</span>
+    </p>
+
+    <p>
+      全館電線電纜 <strong>全面 8 折</strong> · 限時優惠 · 滿額免運
+      <span class="en-line">All cables 20% off · Limited time · Free shipping for qualifying orders</span>
+    </p>
+
+    <div class="hero-cta">
+      <a href="https://django2.tw.cpolar.io/" class="btn">立即逛逛 <span class="en-line">Shop Now</span></a>
+    </div>
+  </section>
+
+  <!-- 輕量宣傳條 -->
+  <div class="promo" aria-hidden="true">
+    <div class="pill">🎉 良心買賣 絕無詐欺 <span class="en-line">Honest Deals, No Scams</span></div>
+    <div class="pill">🛠️ 工具職人首選 <span class="en-line">Preferred by Professionals</span></div>
+    <div class="pill">🔒 安全與品質 <span class="en-line">Safety and Quality Guaranteed</span></div>
+  </div>
+
+  <!-- 主體：內容 + 側欄 -->
+  <div class="main-grid">
+    <!-- 內容區：產品 -->
+    <div>
+      <h2 class="section-title">✨ 精選商品 <span class="en-line">Featured Products</span></h2>
+
+      <div class="products">
+        
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            
+              <img src="./shopping-center_files/a.jpg" alt="莊智超" class="img">
+            
+
+            <h3 class="name">莊智超</h3>
+            <div class="price-row">
+              <span class="price">NT$ 81405117</span>
+            </div>
+
+            <form method="post" action="https://django2.tw.cpolar.io/cart/add/1/">
+              <input type="hidden" name="csrfmiddlewaretoken" value="ZA9o3B9UwrGll7pAp1paAFVGRXTdGOWtTznaSU3KR4jBaLFGt1fgGj82A3o80HoV">
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車 <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            
+              <img src="./shopping-center_files/c.jpg" alt="莊洧宸" class="img">
+            
+
+            <h3 class="name">莊洧宸</h3>
+            <div class="price-row">
+              <span class="price">NT$ 81405129</span>
+            </div>
+
+            <form method="post" action="https://django2.tw.cpolar.io/cart/add/3/">
+              <input type="hidden" name="csrfmiddlewaretoken" value="ZA9o3B9UwrGll7pAp1paAFVGRXTdGOWtTznaSU3KR4jBaLFGt1fgGj82A3o80HoV">
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車 <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            
+              <img src="./shopping-center_files/d.jpg" alt="林書亞" class="img">
+            
+
+            <h3 class="name">林書亞</h3>
+            <div class="price-row">
+              <span class="price">NT$ 81405150</span>
+            </div>
+
+            <form method="post" action="https://django2.tw.cpolar.io/cart/add/4/">
+              <input type="hidden" name="csrfmiddlewaretoken" value="ZA9o3B9UwrGll7pAp1paAFVGRXTdGOWtTznaSU3KR4jBaLFGt1fgGj82A3o80HoV">
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車 <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            
+              <img src="./shopping-center_files/e.jpg" alt="趙晨勛" class="img">
+            
+
+            <h3 class="name">趙晨勛</h3>
+            <div class="price-row">
+              <span class="price">NT$ 81405146</span>
+            </div>
+
+            <form method="post" action="https://django2.tw.cpolar.io/cart/add/5/">
+              <input type="hidden" name="csrfmiddlewaretoken" value="ZA9o3B9UwrGll7pAp1paAFVGRXTdGOWtTznaSU3KR4jBaLFGt1fgGj82A3o80HoV">
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車 <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        
+          <div class="card">
+            <div class="sale-tag">-20%</div>
+            
+              <img src="./shopping-center_files/f.jpg" alt="顏璽" class="img">
+            
+
+            <h3 class="name">顏璽</h3>
+            <div class="price-row">
+              <span class="price">NT$ 81405137</span>
+            </div>
+
+            <form method="post" action="https://django2.tw.cpolar.io/cart/add/6/">
+              <input type="hidden" name="csrfmiddlewaretoken" value="ZA9o3B9UwrGll7pAp1paAFVGRXTdGOWtTznaSU3KR4jBaLFGt1fgGj82A3o80HoV">
+              <button type="submit" class="btn-primary">
+                🛒 加入購物車 <span class="en-line">Add to Cart</span>
+              </button>
+            </form>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- 側欄：廣告 -->
+    <aside class="aside">
+      <div class="ad">
+        <h3>🔥 熱門廣告 <span class="en-line">Hot Ads</span></h3>
+        <a href="https://www.google.com/" target="_blank" rel="noopener">
+          <img src="./shopping-center_files/ad1.gif" alt="廣告1">
+        </a>
+      </div>
+
+      <div class="ad">
+        <h3>🎯 推薦商品 <span class="en-line">Recommended Products</span></h3>
+        <a href="https://www.yahoo.com/" target="_blank" rel="noopener">
+          <img src="./shopping-center_files/ad2.gif" alt="廣告2">
+        </a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
+    <div>
+      <a href="https://django2.tw.cpolar.io/#" class="btn-primary">
+        🛍️ 立即購物
+        <span class="en-text">Shop Now</span>
+      </a>
+    </div>
+  </div>
+
+
+
+</body></html>
