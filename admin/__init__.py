@@ -1,52 +1,29 @@
-from django.contrib.admin.decorators import action, display, register
-from django.contrib.admin.filters import (
-    AllValuesFieldListFilter,
-    BooleanFieldListFilter,
-    ChoicesFieldListFilter,
-    DateFieldListFilter,
-    EmptyFieldListFilter,
-    FieldListFilter,
-    ListFilter,
-    RelatedFieldListFilter,
-    RelatedOnlyFieldListFilter,
-    SimpleListFilter,
-)
-from django.contrib.admin.options import (
+from django.contrib.admin import (
     HORIZONTAL,
     VERTICAL,
+    AdminSite,
     ModelAdmin,
-    ShowFacets,
     StackedInline,
     TabularInline,
+    action,
+    autodiscover,
+    display,
+    register,
+    site,
 )
-from django.contrib.admin.sites import AdminSite, site
-from django.utils.module_loading import autodiscover_modules
+from django.contrib.gis.admin.options import GISModelAdmin
 
 __all__ = [
-    "action",
-    "display",
-    "register",
-    "ModelAdmin",
     "HORIZONTAL",
     "VERTICAL",
+    "AdminSite",
+    "ModelAdmin",
     "StackedInline",
     "TabularInline",
-    "AdminSite",
-    "site",
-    "ListFilter",
-    "SimpleListFilter",
-    "FieldListFilter",
-    "BooleanFieldListFilter",
-    "RelatedFieldListFilter",
-    "ChoicesFieldListFilter",
-    "DateFieldListFilter",
-    "AllValuesFieldListFilter",
-    "EmptyFieldListFilter",
-    "RelatedOnlyFieldListFilter",
-    "ShowFacets",
+    "action",
     "autodiscover",
+    "display",
+    "register",
+    "site",
+    "GISModelAdmin",
 ]
-
-
-def autodiscover():
-    autodiscover_modules("admin", register_to=site)
