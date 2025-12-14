@@ -1,6 +1,13 @@
-# IANA versions like 2020a are not valid PEP 440 identifiers; the recommended
-# way to translate the version is to use YYYY.n where `n` is a 0-based index.
-__version__ = "2025.2"
+from __future__ import annotations
 
-# This exposes the original IANA version number.
-IANA_VERSION = "2025b"
+__version__ = "25.2"
+
+
+def main(args: list[str] | None = None) -> int:
+    """This is an internal API only meant for use by pip's own console scripts.
+
+    For additional details, see https://github.com/pypa/pip/issues/7498.
+    """
+    from pip._internal.utils.entrypoints import _wrapper
+
+    return _wrapper(args)
