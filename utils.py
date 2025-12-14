@@ -1,342 +1,278 @@
-import datetime
-import decimal
-import functools
-import logging
-import time
-import warnings
-from contextlib import contextmanager
-from hashlib import md5
+import pkgutil
+from importlib import import_module
 
-from django.apps import apps
-from django.db import NotSupportedError
-from django.utils.dateparse import parse_time
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
-logger = logging.getLogger("django.db.backends")
+# For backwards compatibility with Django < 3.2
+from django.utils.connection import ConnectionDoesNotExist  # NOQA: F401
+from django.utils.connection import BaseConnectionHandler
+from django.utils.functional import cached_property
+from django.utils.module_loading import import_string
+
+DEFAULT_DB_ALIAS = "default"
+DJANGO_VERSION_PICKLE_KEY = "_django_version"
 
 
-class CursorWrapper:
-    def __init__(self, cursor, db):
-        self.cursor = cursor
-        self.db = db
+class Error(Exception):
+    pass
 
-    WRAP_ERROR_ATTRS = frozenset(["fetchone", "fetchmany", "fetchall", "nextset"])
 
-    APPS_NOT_READY_WARNING_MSG = (
-        "Accessing the database during app initialization is discouraged. To fix this "
-        "warning, avoid executing queries in AppConfig.ready() or when your app "
-        "modules are imported."
-    )
+class InterfaceError(Error):
+    pass
 
-    def __getattr__(self, attr):
-        cursor_attr = getattr(self.cursor, attr)
-        if attr in CursorWrapper.WRAP_ERROR_ATTRS:
-            return self.db.wrap_database_errors(cursor_attr)
-        else:
-            return cursor_attr
 
-    def __iter__(self):
-        with self.db.wrap_database_errors:
-            yield from self.cursor
+class DatabaseError(Error):
+    pass
+
+
+class DataError(DatabaseError):
+    pass
+
+
+class OperationalError(DatabaseError):
+    pass
+
+
+class IntegrityError(DatabaseError):
+    pass
+
+
+class InternalError(DatabaseError):
+    pass
+
+
+class ProgrammingError(DatabaseError):
+    pass
+
+
+class NotSupportedError(DatabaseError):
+    pass
+
+
+class DatabaseErrorWrapper:
+    """
+    Context manager and decorator that reraises backend-specific database
+    exceptions using Django's common wrappers.
+    """
+
+    def __init__(self, wrapper):
+        """
+        wrapper is a database wrapper.
+
+        It must have a Database attribute defining PEP-249 exceptions.
+        """
+        self.wrapper = wrapper
 
     def __enter__(self):
-        return self
+        pass
 
-    def __exit__(self, type, value, traceback):
-        # Close instead of passing through to avoid backend-specific behavior
-        # (#17671). Catch errors liberally because errors in cleanup code
-        # aren't useful.
-        try:
-            self.close()
-        except self.db.Database.Error:
-            pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            return
+        for dj_exc_type in (
+            DataError,
+            OperationalError,
+            IntegrityError,
+            InternalError,
+            ProgrammingError,
+            NotSupportedError,
+            DatabaseError,
+            InterfaceError,
+            Error,
+        ):
+            db_exc_type = getattr(self.wrapper.Database, dj_exc_type.__name__)
+            if issubclass(exc_type, db_exc_type):
+                dj_exc_value = dj_exc_type(*exc_value.args)
+                # Only set the 'errors_occurred' flag for errors that may make
+                # the connection unusable.
+                if dj_exc_type not in (DataError, IntegrityError):
+                    self.wrapper.errors_occurred = True
+                raise dj_exc_value.with_traceback(traceback) from exc_value
 
-    # The following methods cannot be implemented in __getattr__, because the
-    # code must run when the method is invoked, not just when it is accessed.
+    def __call__(self, func):
+        # Note that we are intentionally not using @wraps here for performance
+        # reasons. Refs #21109.
+        def inner(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
 
-    def callproc(self, procname, params=None, kparams=None):
-        # Keyword parameters for callproc aren't supported in PEP 249, but the
-        # database driver may support them (e.g. oracledb).
-        if kparams is not None and not self.db.features.supports_callproc_kwargs:
-            raise NotSupportedError(
-                "Keyword parameters for callproc are not supported on this "
-                "database backend."
+        return inner
+
+
+def load_backend(backend_name):
+    """
+    Return a database backend's "base" module given a fully qualified database
+    backend name, or raise an error if it doesn't exist.
+    """
+    # This backend was renamed in Django 1.9.
+    if backend_name == "django.db.backends.postgresql_psycopg2":
+        backend_name = "django.db.backends.postgresql"
+
+    try:
+        return import_module("%s.base" % backend_name)
+    except ImportError as e_user:
+        # The database backend wasn't found. Display a helpful error message
+        # listing all built-in database backends.
+        import django.db.backends
+
+        builtin_backends = [
+            name
+            for _, name, ispkg in pkgutil.iter_modules(django.db.backends.__path__)
+            if ispkg and name not in {"base", "dummy"}
+        ]
+        if backend_name not in ["django.db.backends.%s" % b for b in builtin_backends]:
+            backend_reprs = map(repr, sorted(builtin_backends))
+            raise ImproperlyConfigured(
+                "%r isn't an available database backend or couldn't be "
+                "imported. Check the above exception. To use one of the "
+                "built-in backends, use 'django.db.backends.XXX', where XXX "
+                "is one of:\n"
+                "    %s" % (backend_name, ", ".join(backend_reprs))
+            ) from e_user
+        else:
+            # If there's some other error, this must be an error in Django
+            raise
+
+
+class ConnectionHandler(BaseConnectionHandler):
+    settings_name = "DATABASES"
+    # Connections needs to still be an actual thread local, as it's truly
+    # thread-critical. Database backends should use @async_unsafe to protect
+    # their code from async contexts, but this will give those contexts
+    # separate connections in case it's needed as well. There's no cleanup
+    # after async contexts, though, so we don't allow that if we can help it.
+    thread_critical = True
+
+    def configure_settings(self, databases):
+        databases = super().configure_settings(databases)
+        if databases == {}:
+            databases[DEFAULT_DB_ALIAS] = {"ENGINE": "django.db.backends.dummy"}
+        elif DEFAULT_DB_ALIAS not in databases:
+            raise ImproperlyConfigured(
+                f"You must define a '{DEFAULT_DB_ALIAS}' database."
             )
-        # Raise a warning during app initialization (stored_app_configs is only
-        # ever set during testing).
-        if not apps.ready and not apps.stored_app_configs:
-            warnings.warn(self.APPS_NOT_READY_WARNING_MSG, category=RuntimeWarning)
-        self.db.validate_no_broken_transaction()
-        with self.db.wrap_database_errors:
-            if params is None and kparams is None:
-                return self.cursor.callproc(procname)
-            elif kparams is None:
-                return self.cursor.callproc(procname, params)
+        elif databases[DEFAULT_DB_ALIAS] == {}:
+            databases[DEFAULT_DB_ALIAS]["ENGINE"] = "django.db.backends.dummy"
+
+        # Configure default settings.
+        for conn in databases.values():
+            conn.setdefault("ATOMIC_REQUESTS", False)
+            conn.setdefault("AUTOCOMMIT", True)
+            conn.setdefault("ENGINE", "django.db.backends.dummy")
+            if conn["ENGINE"] == "django.db.backends." or not conn["ENGINE"]:
+                conn["ENGINE"] = "django.db.backends.dummy"
+            conn.setdefault("CONN_MAX_AGE", 0)
+            conn.setdefault("CONN_HEALTH_CHECKS", False)
+            conn.setdefault("OPTIONS", {})
+            conn.setdefault("TIME_ZONE", None)
+            for setting in ["NAME", "USER", "PASSWORD", "HOST", "PORT"]:
+                conn.setdefault(setting, "")
+
+            test_settings = conn.setdefault("TEST", {})
+            default_test_settings = [
+                ("CHARSET", None),
+                ("COLLATION", None),
+                ("MIGRATE", True),
+                ("MIRROR", None),
+                ("NAME", None),
+            ]
+            for key, value in default_test_settings:
+                test_settings.setdefault(key, value)
+        return databases
+
+    @property
+    def databases(self):
+        # Maintained for backward compatibility as some 3rd party packages have
+        # made use of this private API in the past. It is no longer used within
+        # Django itself.
+        return self.settings
+
+    def create_connection(self, alias):
+        db = self.settings[alias]
+        backend = load_backend(db["ENGINE"])
+        return backend.DatabaseWrapper(db, alias)
+
+
+class ConnectionRouter:
+    def __init__(self, routers=None):
+        """
+        If routers is not specified, default to settings.DATABASE_ROUTERS.
+        """
+        self._routers = routers
+
+    @cached_property
+    def routers(self):
+        if self._routers is None:
+            self._routers = settings.DATABASE_ROUTERS
+        routers = []
+        for r in self._routers:
+            if isinstance(r, str):
+                router = import_string(r)()
             else:
-                params = params or ()
-                return self.cursor.callproc(procname, params, kparams)
+                router = r
+            routers.append(router)
+        return routers
 
-    def execute(self, sql, params=None):
-        return self._execute_with_wrappers(
-            sql, params, many=False, executor=self._execute
-        )
+    def _router_func(action):
+        def _route_db(self, model, **hints):
+            chosen_db = None
+            for router in self.routers:
+                try:
+                    method = getattr(router, action)
+                except AttributeError:
+                    # If the router doesn't have a method, skip to the next one.
+                    pass
+                else:
+                    chosen_db = method(model, **hints)
+                    if chosen_db:
+                        return chosen_db
+            instance = hints.get("instance")
+            if instance is not None and instance._state.db:
+                return instance._state.db
+            return DEFAULT_DB_ALIAS
 
-    def executemany(self, sql, param_list):
-        return self._execute_with_wrappers(
-            sql, param_list, many=True, executor=self._executemany
-        )
+        return _route_db
 
-    def _execute_with_wrappers(self, sql, params, many, executor):
-        context = {"connection": self.db, "cursor": self}
-        for wrapper in reversed(self.db.execute_wrappers):
-            executor = functools.partial(wrapper, executor)
-        return executor(sql, params, many, context)
+    db_for_read = _router_func("db_for_read")
+    db_for_write = _router_func("db_for_write")
 
-    def _execute(self, sql, params, *ignored_wrapper_args):
-        # Raise a warning during app initialization (stored_app_configs is only
-        # ever set during testing).
-        if not apps.ready and not apps.stored_app_configs:
-            warnings.warn(self.APPS_NOT_READY_WARNING_MSG, category=RuntimeWarning)
-        self.db.validate_no_broken_transaction()
-        with self.db.wrap_database_errors:
-            if params is None:
-                # params default might be backend specific.
-                return self.cursor.execute(sql)
-            else:
-                return self.cursor.execute(sql, params)
-
-    def _executemany(self, sql, param_list, *ignored_wrapper_args):
-        # Raise a warning during app initialization (stored_app_configs is only
-        # ever set during testing).
-        if not apps.ready and not apps.stored_app_configs:
-            warnings.warn(self.APPS_NOT_READY_WARNING_MSG, category=RuntimeWarning)
-        self.db.validate_no_broken_transaction()
-        with self.db.wrap_database_errors:
-            return self.cursor.executemany(sql, param_list)
-
-
-class CursorDebugWrapper(CursorWrapper):
-    # XXX callproc isn't instrumented at this time.
-
-    def execute(self, sql, params=None):
-        with self.debug_sql(sql, params, use_last_executed_query=True):
-            return super().execute(sql, params)
-
-    def executemany(self, sql, param_list):
-        with self.debug_sql(sql, param_list, many=True):
-            return super().executemany(sql, param_list)
-
-    @contextmanager
-    def debug_sql(
-        self, sql=None, params=None, use_last_executed_query=False, many=False
-    ):
-        start = time.monotonic()
-        try:
-            yield
-        finally:
-            stop = time.monotonic()
-            duration = stop - start
-            if use_last_executed_query:
-                sql = self.db.ops.last_executed_query(self.cursor, sql, params)
+    def allow_relation(self, obj1, obj2, **hints):
+        for router in self.routers:
             try:
-                times = len(params) if many else ""
-            except TypeError:
-                # params could be an iterator.
-                times = "?"
-            self.db.queries_log.append(
-                {
-                    "sql": "%s times: %s" % (times, sql) if many else sql,
-                    "time": "%.3f" % duration,
-                }
-            )
-            logger.debug(
-                "(%.3f) %s; args=%s; alias=%s",
-                duration,
-                sql,
-                params,
-                self.db.alias,
-                extra={
-                    "duration": duration,
-                    "sql": sql,
-                    "params": params,
-                    "alias": self.db.alias,
-                },
-            )
+                method = router.allow_relation
+            except AttributeError:
+                # If the router doesn't have a method, skip to the next one.
+                pass
+            else:
+                allow = method(obj1, obj2, **hints)
+                if allow is not None:
+                    return allow
+        return obj1._state.db == obj2._state.db
 
+    def allow_migrate(self, db, app_label, **hints):
+        for router in self.routers:
+            try:
+                method = router.allow_migrate
+            except AttributeError:
+                # If the router doesn't have a method, skip to the next one.
+                continue
 
-@contextmanager
-def debug_transaction(connection, sql):
-    start = time.monotonic()
-    try:
-        yield
-    finally:
-        if connection.queries_logged:
-            stop = time.monotonic()
-            duration = stop - start
-            connection.queries_log.append(
-                {
-                    "sql": "%s" % sql,
-                    "time": "%.3f" % duration,
-                }
-            )
-            logger.debug(
-                "(%.3f) %s; args=%s; alias=%s",
-                duration,
-                sql,
-                None,
-                connection.alias,
-                extra={
-                    "duration": duration,
-                    "sql": sql,
-                    "alias": connection.alias,
-                },
-            )
+            allow = method(db, app_label, **hints)
 
+            if allow is not None:
+                return allow
+        return True
 
-def split_tzname_delta(tzname):
-    """
-    Split a time zone name into a 3-tuple of (name, sign, offset).
-    """
-    for sign in ["+", "-"]:
-        if sign in tzname:
-            name, offset = tzname.rsplit(sign, 1)
-            if offset and parse_time(offset):
-                if ":" not in offset:
-                    offset = f"{offset}:00"
-                return name, sign, offset
-    return tzname, None, None
-
-
-###############################################
-# Converters from database (string) to Python #
-###############################################
-
-
-def typecast_date(s):
-    return (
-        datetime.date(*map(int, s.split("-"))) if s else None
-    )  # return None if s is null
-
-
-def typecast_time(s):  # does NOT store time zone information
-    if not s:
-        return None
-    hour, minutes, seconds = s.split(":")
-    if "." in seconds:  # check whether seconds have a fractional part
-        seconds, microseconds = seconds.split(".")
-    else:
-        microseconds = "0"
-    return datetime.time(
-        int(hour), int(minutes), int(seconds), int((microseconds + "000000")[:6])
-    )
-
-
-def typecast_timestamp(s):  # does NOT store time zone information
-    # "2005-07-29 15:48:00.590358-05"
-    # "2005-07-29 09:56:00-05"
-    if not s:
-        return None
-    if " " not in s:
-        return typecast_date(s)
-    d, t = s.split()
-    # Remove timezone information.
-    if "-" in t:
-        t, _ = t.split("-", 1)
-    elif "+" in t:
-        t, _ = t.split("+", 1)
-    dates = d.split("-")
-    times = t.split(":")
-    seconds = times[2]
-    if "." in seconds:  # check whether seconds have a fractional part
-        seconds, microseconds = seconds.split(".")
-    else:
-        microseconds = "0"
-    return datetime.datetime(
-        int(dates[0]),
-        int(dates[1]),
-        int(dates[2]),
-        int(times[0]),
-        int(times[1]),
-        int(seconds),
-        int((microseconds + "000000")[:6]),
-    )
-
-
-###############################################
-# Converters from Python to database (string) #
-###############################################
-
-
-def split_identifier(identifier):
-    """
-    Split an SQL identifier into a two element tuple of (namespace, name).
-
-    The identifier could be a table, column, or sequence name might be prefixed
-    by a namespace.
-    """
-    try:
-        namespace, name = identifier.split('"."')
-    except ValueError:
-        namespace, name = "", identifier
-    return namespace.strip('"'), name.strip('"')
-
-
-def truncate_name(identifier, length=None, hash_len=4):
-    """
-    Shorten an SQL identifier to a repeatable mangled version with the given
-    length.
-
-    If a quote stripped name contains a namespace, e.g. USERNAME"."TABLE,
-    truncate the table portion only.
-    """
-    namespace, name = split_identifier(identifier)
-
-    if length is None or len(name) <= length:
-        return identifier
-
-    digest = names_digest(name, length=hash_len)
-    return "%s%s%s" % (
-        '%s"."' % namespace if namespace else "",
-        name[: length - hash_len],
-        digest,
-    )
-
-
-def names_digest(*args, length):
-    """
-    Generate a 32-bit digest of a set of arguments that can be used to shorten
-    identifying names.
-    """
-    h = md5(usedforsecurity=False)
-    for arg in args:
-        h.update(arg.encode())
-    return h.hexdigest()[:length]
-
-
-def format_number(value, max_digits, decimal_places):
-    """
-    Format a number into a string with the requisite number of digits and
-    decimal places.
-    """
-    if value is None:
-        return None
-    context = decimal.getcontext().copy()
-    if max_digits is not None:
-        context.prec = max_digits
-    if decimal_places is not None:
-        value = value.quantize(
-            decimal.Decimal(1).scaleb(-decimal_places), context=context
+    def allow_migrate_model(self, db, model):
+        return self.allow_migrate(
+            db,
+            model._meta.app_label,
+            model_name=model._meta.model_name,
+            model=model,
         )
-    else:
-        context.traps[decimal.Rounded] = 1
-        value = context.create_decimal(value)
-    return "{:f}".format(value)
 
-
-def strip_quotes(table_name):
-    """
-    Strip quotes off of quoted table names to make them safe for use in index
-    names, sequence names, etc. For example '"USER"."TABLE"' (an Oracle naming
-    scheme) becomes 'USER"."TABLE'.
-    """
-    has_quotes = table_name.startswith('"') and table_name.endswith('"')
-    return table_name[1:-1] if has_quotes else table_name
+    def get_migratable_models(self, app_config, db, include_auto_created=False):
+        """Return app models allowed to be migrated on provided db."""
+        models = app_config.get_models(include_auto_created=include_auto_created)
+        return [model for model in models if self.allow_migrate_model(db, model)]
